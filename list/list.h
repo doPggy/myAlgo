@@ -74,6 +74,10 @@ public:
     void setTail(Node * tail);
     void setNodeAmount(size_t nodeAmount);
 
+    // 封装删除逻辑
+    void delElemByNodePtr(Node *nodePtr, elemType & elem);
+    // 封装插入逻辑
+    void insertElemByNodePtr(Node *nodePtr, elemType elem, bool isFrontInsert = false);
     void insertElemByIndex(int index, elemType elem, bool isFrontInsert = false);
     void delElemByIndex(int index, elemType &elem);
     void modidfyElemByIndex(int index, elemType elem);
@@ -84,14 +88,17 @@ public:
     void delTail(elemType &elem);
     void traverse();
     void print();
+    void reversePrint();
     void clear();
     void destroy();
+    void destroyHeadAndSelf();
 
 
     bool isEmpty();
     bool isExistRing();
 
     void reverse();
+    void delCountBackwardElem(int backIndex, elemType & elem);
     void ascendingOrderInsert(elemType elem);
     void descendingOrderInsert(elemType elem);
 
