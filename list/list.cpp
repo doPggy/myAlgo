@@ -16,12 +16,14 @@ List::~List()
     cout << "i m be delete " << this->nodeAmount << endl;
 }
 
-Node * List::_next(Node *node)
+static Node * 
+_next(Node *node)
 {
     return node->getNext();
 }
 
-Node * List::_pre(Node *node)
+static Node * 
+_pre(Node *node)
 {
     return node->getPre();
 }
@@ -41,7 +43,7 @@ Node * List::locateNodeByIndex(int index)
     Node * traverseNode = this->head;
     for(int i = 0; i < index; i++)
     {
-        traverseNode = _next(traverseNode);
+        traverseNode = List::_next(traverseNode);
     }
     return traverseNode;
 }
@@ -56,6 +58,21 @@ Node * List::Tail()
     return this->tail;
 }
 
+void List::setHead(Node * head)
+{
+    this->head = head;
+}
+
+void List::setTail(Node * tail)
+{
+    this->tail = tail;
+}
+
+void List::setNodeAmount(size_t nodeAmount)
+{
+    this->nodeAmount = (nodeAmount >= 0) ? nodeAmount : this->nodeAmount;
+}
+
 void List::insertElemByIndex(int index, elemType elem, bool isFrontInsert)
 {
     // 大于 nodeAmount + 1 因为可能尾插
@@ -67,7 +84,7 @@ void List::insertElemByIndex(int index, elemType elem, bool isFrontInsert)
     if(Node * locateNode = this->locateNodeByIndex(index))
     {
         Node * newNode          = new Node(elem);
-        Node * locateNodeNext   = _next(locateNode);
+        Node * locateNodeNext   = List::_next(locateNode);
 
         this->tail = (locateNode == this->tail) ? newNode : this->tail; 
         newNode->nextPoint2(locateNodeNext);
@@ -109,7 +126,7 @@ void List::delElemByIndex(int index, elemType &elem)
     if(Node * locateNode = this->locateNodeByIndex(index))
     {
         Node * locateNodePre    = _pre(locateNode);
-        Node * locateNodeNext   = _next(locateNode);
+        Node * locateNodeNext   = List::_next(locateNode);
 
         this->tail = (locateNode == this->tail) ? locateNodePre : this->tail; 
         locateNodePre->nextPoint2(locateNodeNext);
@@ -145,7 +162,7 @@ void List::print()
     Node * n = this->head;
     for(int i = 0; i < this->nodeAmount; i++)
     {
-        n = _next(n);
+        n = List::_next(n);
         cout << "[" << i + 1 <<  "] = " << n->getElem() << endl;
     }
 }
@@ -180,10 +197,10 @@ bool List::isExistRing()
     Node *slow = this->head;
 
     // fast next 也要不为 NULL，防止指到 NULL，再操作出现段错误
-    while(fast != NULL && _next(fast) != NULL)
+    while(fast != NULL && List::_next(fast) != NULL)
     {
-        fast = _next(_next(fast));
-        slow = _next(slow);
+        fast = List::_next(List::_next(fast));
+        slow = List::_next(slow);
         if(fast == slow)
         {
             return true;
@@ -199,51 +216,98 @@ void List::reverse()
 }
 
 // 返回两个升序链表的合并的新链表
-List * List::createMergeAsendingList(List *list)
+// O(m + n) m = list1->nodeAmount, n = list2->nodeAmount
+static List * 
+mergeAsendingList(List *asendingList1, List *asendingList2)
 {
     // 需要合并的链表不存在
-    if (list == NULL)
+    if (asendingList1 == NULL or asendingList2 == NULL)
     {
-        return;
+        return NULL;
     }
-    Node * selfNode  = this->Head();
-    Node * otherNode = list->Head();
-    Node * mergeNode = this->Head();
 
-    // 1 3 4 8 9
-    // 2 6 7 10
-    while(selfNode->getNext())
+    Node * mergeNode = asendingList1->Head();
+    Node * node1     = List::_next(asendingList1->Head());
+    Node * node2     = List::_next(asendingList2->Head());
+    // TODO: 如下算法其实可以使用两个链表的长度去判断，这里只使用遍历这个逻辑
+
+    // 0 2 6 7 
+    // 0 1 3 4 8 9
+    // list2 会剩下一个 list 和 头结点
+    
+    // 合并后长度增加
+    asendingList1->setNodeAmount(asendingList1->getNodeAmount() + asendingList2->getNodeAmount());
+    while(node1 != asendingList1->Head() && node2 != asendingList2->Head())
     {
-        selfNode = _next(selfNode);
+        if (node1->getElem() < node1->getElem())
+        {
+            node1->prePoint2(mergeNode);
+            mergeNode->nextPoint2(node1);
+            node1     = List::_next(node1);
+            mergeNode = List::_next(mergeNode);
+        }
+        else
+        {
+            node2->prePoint2(mergeNode);
+            mergeNode->nextPoint2(node2);
+            node2     = List::_next(node2);
+            mergeNode = List::_next(mergeNode);
+        }
     }
+
+    // 由于 list1/list2 可能不一样长
+    if(node1 != asendingList1->Head())
+    {
+        node1->prePoint2(mergeNode);
+        mergeNode->nextPoint2(node1);
+    }
+    else if(node2 != asendingList2->Head())
+    {
+        node2->prePoint2(mergeNode);
+        mergeNode->nextPoint2(node2);
+        // 需要保持循环
+        Node * tail = asendingList2->Tail();
+        tail->nextPoint2(asendingList1->Head());
+        asendingList1->setTail(tail);
+    }
+    // 两者一样长，指向 list1 的头，保持循环
+    else
+    {
+        asendingList1->setTail(mergeNode);
+        mergeNode->nextPoint2(asendingList1->Head());
+    }
+
+    // 基于 list1 的合并，list2 会成为没有数据节点的空链表
+    asendingList2->destroy();
+    return asendingList1;
 }
 
 // 将传入的链表合并
-void List::mergeAsendingList(List *list)
-{
-    // 需要合并的链表不存在
-    if (list == NULL)
-    {
-        return;
-    }
-    Node * selfNode  = this->Head();
-    Node * otherNode = list->Head();
-    Node * mergeNode = this->Head();
+// void List::mergeAsendingList(List *list)
+// {
+//     // 需要合并的链表不存在
+//     if (list == NULL)
+//     {
+//         return;
+//     }
+//     Node * selfNode  = this->Head();
+//     Node * otherNode = list->Head();
+//     Node * mergeNode = this->Head();
 
-    // 1 3 4 8 9
-    // 2 6 7 10
-    while(selfNode->getNext())
-    {
-        selfNode = _next(selfNode);
-    }
-}
+//     // 1 3 4 8 9
+//     // 2 6 7 10
+//     while(selfNode->getNext())
+//     {
+//         selfNode = _next(selfNode);
+//     }
+// }
 
 void List::ascendingOrderInsert(elemType elem)
 {
     Node * node = this->head;
     for(int i = 0; i < this->nodeAmount; i++)
     {
-        node = _next(node);
+        node = this->_next(node);
         //1 2 3 5 77 10
         if (elem <= node->getElem())
         {
@@ -259,7 +323,7 @@ void List::descendingOrderInsert(elemType elem)
     Node * node = this->head;
     for(int i = 0; i < this->nodeAmount; i++)
     {
-        node = _next(node);
+        node = List::_next(node);
         // 77 5 1 
         if (elem > node->getElem())
         {

@@ -61,12 +61,18 @@ private:
 public:
     List();
     ~List();
-    Node * _next(Node *node);
-    Node * _pre(Node *node);
+
+    static List * mergeAsendingList(List *list1, List *list2);
+    static Node * _next(Node *node);
+    static Node * _pre(Node *node);
+
     Node * traverse2MiddleNode();
     Node * locateNodeByIndex(int index);
     Node * Head();
     Node * Tail();
+    void setHead(Node * head);
+    void setTail(Node * tail);
+    void setNodeAmount(size_t nodeAmount);
 
     void insertElemByIndex(int index, elemType elem, bool isFrontInsert = false);
     void delElemByIndex(int index, elemType &elem);
@@ -86,11 +92,9 @@ public:
     bool isExistRing();
 
     void reverse();
-    void mergeAsendingList(List *list);
     void ascendingOrderInsert(elemType elem);
     void descendingOrderInsert(elemType elem);
 
-    List * createMergeAsendingList(List *list);
 
     int getNodeAmount();
 
