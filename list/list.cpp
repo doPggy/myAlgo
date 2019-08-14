@@ -1,6 +1,5 @@
 #include "list.h"
 
-
 List::List()
 {
     this->head       = new Node();
